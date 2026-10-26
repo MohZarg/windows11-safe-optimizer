@@ -70,7 +70,34 @@ try {
     elseif ($ramGB -le 8) { Write-Host "RAM tier: entry-level (up to 8 GB)." }
     elseif ($ramGB -le 16) { Write-Host "RAM tier: mainstream (8-16 GB)." }
     else { Write-Host "RAM tier: high-memory (over 16 GB)." }
-    Write-Heading "6. Optional old TEMP cleanup"
+    Write-Heading "6. Optional reversible power-plan adjustment"
+    if ($Profile -eq 'Performance') {
+      Write-Host "This optional setting may increase power use and heat, especially on laptops."
+      try {
+        $plans = @(powercfg.exe /list 2>$null)
+        $currentLine = $plans | Where-Object { $_ -match '\\*' } | Select-Object -First 1
+        $currentGuid = $null
+        if ($currentLine -match '([0-9a-fA-F-]{36})') { $currentGuid = $Matches[1] }
+        $highLine = $plans | Where-Object { $_ -match 'High performance|Ultimate Performance' } | Select-Object -First 1
+        $highGuid = $null
+        if ($highLine -match '([0-9a-fA-F-]{36})') { $highGuid = $Matches[1] }
+        if ($currentGuid -and $highGuid -and $currentGuid -ne $highGuid) {
+          Write-Host "Current plan: $currentGuid"
+          Write-Host "Target plan:  $highGuid"
+          Write-Host "Restore command: powercfg.exe /setactive $currentGuid"
+          if (Ask-YesNo "Switch to the available High/Ultimate Performance plan?") {
+            powercfg.exe /setactive $highGuid
+            if ($LASTEXITCODE -eq 0) { Write-Host "Power plan changed. Use the restore command above to revert." }
+            else { Write-Warning "Power plan change failed; the original plan was not intentionally altered further." }
+          } else { Write-Host "Power-plan change skipped." }
+        } else {
+          Write-Host "No alternate High/Ultimate Performance plan detected; no power-plan change made."
+        }
+      } catch { Write-Warning "Power-plan inventory unavailable; no change made." }
+    } else {
+      Write-Host "Power-plan changes are not offered in LowEnd/Balanced profiles."
+    }
+    Write-Heading "7. Optional old TEMP cleanup"
     $tempPath=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
     Write-Host "Only current-user TEMP files older than 7 days are eligible: $tempPath"
     Write-Host "Personal folders, browser profiles, and Windows Update cache are excluded."
@@ -87,7 +114,7 @@ try {
         Write-Host "Removed files: $removed. Locked or inaccessible files may be skipped."
       } else { Write-Host "No files deleted." }
     } else { Write-Host "Cleanup skipped." }
-    Write-Heading "7. Safety notes"
+    Write-Heading "8. Safety notes"
     Write-Host "No registry, service, scheduled-task, startup, security, or pagefile changes were made."
     Write-Host "Windows 7/8.1 and standard Windows 10 are out of general support; tuning does not restore security support."
     Write-Host "This tool does not guarantee a speed increase. Review log: $logPath"
