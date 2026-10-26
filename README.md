@@ -1,88 +1,34 @@
-# Windows 11 Safe Optimizer
+# MohZarg Safe Optimizer
 
-A conservative, review-first PowerShell utility for inspecting a Windows 11 PC and optionally removing old files from the current user's temporary folder.
+An experimental, review-first toolkit for Windows 7, 8.1, 10, and 11. Each edition has a separate launcher and shares a diagnostic core with three hardware profiles. It does not promise speed gains or silently change critical settings.
 
-> **Status:** Experimental / community review requested. Static checks do not prove runtime safety on every Windows configuration. Review the script before running it.
+## Editions
+- Windows 7 SP1: scripts/Windows7/Start-Windows7.ps1 — requires Windows PowerShell 5.1 and prerequisites; out of general support.
+- Windows 8.1: scripts/Windows81/Start-Windows81.ps1 — requires Windows PowerShell 5.1; out of general support.
+- Windows 10: scripts/Windows10/Start-Windows10.ps1 — requires Windows PowerShell 5.1; standard Windows 10 is out of general support.
+- Windows 11: scripts/Windows11/Start-Windows11.ps1 — requires Windows PowerShell 5.1.
+The shared core is scripts/common/Invoke-SafeOptimizer.ps1. Launchers verify the OS name and stop on mismatch.
 
-## What it does
-
-- Reports Windows version, CPU, installed RAM, and available space on `C:` and `M:` when present.
-- Lists processes with the largest working sets (RAM) and accumulated CPU time.
-- Reports registered startup entries without disabling them.
-- Attempts to report Windows System Restore points; it does not create one.
-- Offers optional cleanup of files older than 7 days in the current user's TEMP folder, after listing candidates and asking for confirmation.
-- Writes a transcript log to the current user's Desktop.
-
-## What it deliberately does not do
-
-- Does not disable Windows services or scheduled tasks.
-- Does not edit the registry.
-- Does not modify the Windows page file or memory-management settings.
-- Does not target Downloads, Documents, Desktop, browser profiles, Recycle Bin, or Windows Update cache.
-- Does not run `chkdsk /f`, `chkdsk /r`, defragmentation, or other destructive disk operations.
-- Does not promise a speed increase. Diagnosis is the first goal.
-
-## Requirements
-
-- Windows 11
-- Windows PowerShell 5.1 (included with Windows 11)
-- Standard user permissions for basic reporting; some details may be unavailable without elevation
+## Hardware profiles
+- LowEnd: prioritize disk space, diagnose RAM/disk pressure, reduce concurrent workloads, and avoid RAM-booster utilities.
+- Balanced: preserve safe defaults, review startup entries, and measure one change at a time.
+- Performance: measure CPU, disk, and memory bottlenecks before choosing a remedy.
+Profiles do not automatically disable services or startup apps; this is intentional to avoid breaking required features.
 
 ## Quick start
+Download and extract the repository. Run the launcher for your OS from PowerShell. Windows 11 example:
+powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File .\scripts\Windows11\Start-Windows11.ps1
 
-1. Download the repository ZIP from GitHub, or clone the repository.
-2. Extract it to a normal folder.
-3. Double-click `Run_Optimizer.bat`.
-4. Read each prompt. For `[y/N]`, type `y` only if you agree; pressing Enter declines.
-5. Review the log named `Windows11_Optimizer_*.log` on your Desktop.
+Choose 1 for LowEnd, 2 for Balanced, or 3 for Performance. Type y only to approve optional cleanup of old current-user TEMP files; Enter declines. A log is saved to the Desktop.
 
-You can also open PowerShell in the repository folder and run:
+## Safety boundaries
+- No automatic service, scheduled-task, startup, registry, pagefile, security, or Windows Update policy changes.
+- No deletion from personal folders, browser profiles, or Windows Update cache.
+- Optional deletion is limited to files older than seven days in the current user's TEMP folder, after listing candidates and obtaining confirmation.
+- No disk repair operations and no guaranteed speed increase.
+- Keep the Windows-managed paging file enabled. If an HDD reports health warnings, back up important data before further testing.
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File .\scripts\Windows11_Optimizer.ps1
-```
-
-Do not run scripts you have not reviewed. This project does not require administrator privileges for its basic reports; avoid elevating it unless you understand why a particular diagnostic needs elevation.
-
-## Important notes for HDD + 8 GB RAM systems
-
-- Keep the Windows-managed paging file enabled unless you have a specific, tested reason not to.
-- If Disk usage stays at 100%, use Task Manager → Processes → sort by Disk to identify current activity. This script's process list is not a live per-process disk-I/O measurement.
-- If a mechanical HDD reports warnings, makes unusual clicking noises, or becomes intermittently inaccessible, prioritize backing up important files before repair attempts.
-- A SATA SSD is often the most effective hardware upgrade for an older HDD-based PC.
-
-## Safety model
-
-The only deletion operation is the optional cleanup of old files under the current user's TEMP directory. Candidates are listed and the user must confirm deletion. Files that are locked or inaccessible are skipped. This reduces risk but cannot guarantee that every temporary file is safe to remove on every machine.
-
-The script reports restore-point status only. A restore point is not a substitute for a backup, and this tool does not back up personal files.
-
-## Testing
-
-The GitHub Actions workflow runs repository hygiene checks and PSScriptAnalyzer when available. CI static analysis is not the same as running the script on a real Windows 11 machine. Before relying on it, test in a disposable Windows VM or on a non-critical computer and inspect the resulting log.
-
-## Project structure
-
-```text
-.
-├── .github/
-│   └── workflows/
-│       └── static-checks.yml
-├── scripts/
-│   └── Windows11_Optimizer.ps1
-├── Run_Optimizer.bat
-├── README.md
-├── README.fa.md
-├── LICENSE
-├── SECURITY.md
-├── CONTRIBUTING.md
-└── .gitignore
-```
-
-## Persian documentation
-
-See [README.fa.md](README.fa.md) for the Persian guide.
+Windows 7, Windows 8.1, and standard Windows 10 are out of general support. Performance tuning does not restore security updates. CI static analysis is not a substitute for testing on each real or virtualized OS edition.
 
 ## License
-
-MIT. See [LICENSE](LICENSE).
+MIT; see LICENSE.
