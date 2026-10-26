@@ -19,10 +19,35 @@ jobs:
             "scripts/Windows7/Start-Windows7.ps1",
             "scripts/Windows81/Start-Windows81.ps1",
             "scripts/Windows10/Start-Windows10.ps1",
-            "scripts/Windows11/Start-Windows11.ps1"
+            "scripts/Windows11/Start-Windows11.ps1",
+            "scripts/Windows7/Run_Windows7.bat",
+            "Run_Windows7.bat", "Run_Windows81.bat", "Run_Windows10.bat", "Run_Windows11.bat"
           )
           $missing = $required | Where-Object { -not (Test-Path $_) }
           if ($missing) { Write-Error ("Missing required files: " + ($missing -join ", ")) }
+      - name: Validate OS launcher guards and shared safety boundaries
+        shell: pwsh
+        run: |
+          $checks = @{
+            "scripts/Windows7/Start-Windows7.ps1" = "Windows 7"
+            "scripts/Windows81/Start-Windows81.ps1" = "Windows 8\\.1"
+            "scripts/Windows10/Start-Windows10.ps1" = "Windows 10"
+            "scripts/Windows11/Start-Windows11.ps1" = "Windows 11"
+          }
+          foreach ($path in $checks.Keys) {
+            $source = Get-Content -Raw $path
+            if ($source -notmatch [regex]::Escape($checks[$path]).Replace('\\.','\\.')) {
+              throw "Expected OS guard not found in $path"
+            }
+            if ($source -notmatch 'Get-CimInstance Win32_OperatingSystem') {
+              throw "OS detection missing in $path"
+            }
+          }
+          $core = Get-Content -Raw "scripts/common/Invoke-SafeOptimizer.ps1"
+          foreach ($forbidden in @('Set-ItemProperty','New-ItemProperty','Stop-Service','Set-Service','Disable-ScheduledTask')) {
+            if ($core -match [regex]::Escape($forbidden)) { throw "Unexpected high-risk operation in shared core: $forbidden" }
+          }
+          if ($core -notmatch 'Ask-YesNo "Delete eligible old TEMP files\?"') { throw "TEMP deletion consent gate missing" }
       - name: Install PSScriptAnalyzer
         shell: pwsh
         run: Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
