@@ -1,0 +1,11 @@
+# Logs and local test output
+*.log
+*.tmp
+*.bak
+*.old
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
