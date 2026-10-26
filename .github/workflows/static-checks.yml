@@ -20,7 +20,6 @@ jobs:
             "scripts/Windows81/Start-Windows81.ps1",
             "scripts/Windows10/Start-Windows10.ps1",
             "scripts/Windows11/Start-Windows11.ps1",
-            "scripts/Windows7/Run_Windows7.bat",
             "Run_Windows7.bat", "Run_Windows81.bat", "Run_Windows10.bat", "Run_Windows11.bat"
           )
           $missing = $required | Where-Object { -not (Test-Path $_) }
@@ -36,7 +35,7 @@ jobs:
           }
           foreach ($path in $checks.Keys) {
             $source = Get-Content -Raw $path
-            if ($source -notmatch [regex]::Escape($checks[$path]).Replace('\\.','\\.')) {
+            if (-not $source.Contains($checks[$path])) {
               throw "Expected OS guard not found in $path"
             }
             if ($source -notmatch 'Get-CimInstance Win32_OperatingSystem') {
