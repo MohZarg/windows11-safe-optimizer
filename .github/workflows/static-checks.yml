@@ -29,7 +29,7 @@ jobs:
         run: |
           $checks = @{
             "scripts/Windows7/Start-Windows7.ps1" = "Windows 7"
-            "scripts/Windows81/Start-Windows81.ps1" = "Windows 8\\.1"
+            "scripts/Windows81/Start-Windows81.ps1" = 'Windows 8\.1'
             "scripts/Windows10/Start-Windows10.ps1" = "Windows 10"
             "scripts/Windows11/Start-Windows11.ps1" = "Windows 11"
           }
