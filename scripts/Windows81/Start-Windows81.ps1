@@ -5,7 +5,7 @@ if ($PSVersionTable.PSVersion -lt [version]'5.1') {
     exit 3
 }
 $os=Get-CimInstance Win32_OperatingSystem
-if ($os.Caption -notmatch 'Windows 8\.1|Windows 8') {
+if ($os.Caption -notmatch 'Windows 8\\.1') {
     Write-Error "This launcher is intended for Windows 8.1 only. Use the matching edition."
     exit 2
 }
