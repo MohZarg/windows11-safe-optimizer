@@ -1,44 +1,38 @@
 name: Static checks
-
 on:
   push:
   pull_request:
   workflow_dispatch:
-
 jobs:
-  checks:
+  repository-checks:
     runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Check expected project files
+      - name: Check required files
         shell: pwsh
         run: |
           $required = @(
-            "README.md",
-            "README.fa.md",
-            "LICENSE",
-            "SECURITY.md",
-            "CONTRIBUTING.md",
-            "Run_Optimizer.bat",
-            "scripts/Windows11_Optimizer.ps1"
+            "README.md", "README.fa.md", "LICENSE", "SECURITY.md", "CONTRIBUTING.md",
+            "scripts/Windows11_Optimizer.ps1",
+            "scripts/common/Invoke-SafeOptimizer.ps1",
+            "scripts/Windows7/Start-Windows7.ps1",
+            "scripts/Windows81/Start-Windows81.ps1",
+            "scripts/Windows10/Start-Windows10.ps1",
+            "scripts/Windows11/Start-Windows11.ps1"
           )
           $missing = $required | Where-Object { -not (Test-Path $_) }
-          if ($missing) {
-            Write-Error ("Missing required files: " + ($missing -join ", "))
-          }
-
+          if ($missing) { Write-Error ("Missing required files: " + ($missing -join ", ")) }
       - name: Install PSScriptAnalyzer
         shell: pwsh
         run: Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
-
-      - name: Analyze PowerShell
+      - name: Analyze all PowerShell scripts
         shell: pwsh
         run: |
           Import-Module PSScriptAnalyzer
-          $results = Invoke-ScriptAnalyzer -Path "scripts/Windows11_Optimizer.ps1" -Severity Error,Warning
-          $results | Format-Table -AutoSize
-          if ($results | Where-Object { $_.Severity -eq "Error" }) {
-            Write-Error "PSScriptAnalyzer reported errors."
+          $files = Get-ChildItem -Path scripts -Filter *.ps1 -Recurse
+          $results = foreach ($file in $files) {
+            Invoke-ScriptAnalyzer -Path $file.FullName -Severity Error,Warning
           }
+          $results | Format-Table -AutoSize
+          if ($results | Where-Object { $_.Severity -eq "Error" }) { Write-Error "PSScriptAnalyzer reported errors." }
