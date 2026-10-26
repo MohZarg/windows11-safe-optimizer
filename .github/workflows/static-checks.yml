@@ -1,0 +1,44 @@
+name: Static checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check expected project files
+        shell: pwsh
+        run: |
+          $required = @(
+            "README.md",
+            "README.fa.md",
+            "LICENSE",
+            "SECURITY.md",
+            "CONTRIBUTING.md",
+            "Run_Optimizer.bat",
+            "scripts/Windows11_Optimizer.ps1"
+          )
+          $missing = $required | Where-Object { -not (Test-Path $_) }
+          if ($missing) {
+            Write-Error ("Missing required files: " + ($missing -join ", "))
+          }
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
+
+      - name: Analyze PowerShell
+        shell: pwsh
+        run: |
+          Import-Module PSScriptAnalyzer
+          $results = Invoke-ScriptAnalyzer -Path "scripts/Windows11_Optimizer.ps1" -Severity Error,Warning
+          $results | Format-Table -AutoSize
+          if ($results | Where-Object { $_.Severity -eq "Error" }) {
+            Write-Error "PSScriptAnalyzer reported errors."
+          }
